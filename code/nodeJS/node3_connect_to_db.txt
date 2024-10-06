@@ -1,0 +1,38 @@
+const pg = require('pg');
+
+// เริ่มต้น client ด้วยข้อมูลการเชื่อมต่อกับฐานข้อมูล
+const client = new pg.Client({
+    host: 'localhost',
+    port: 5432,
+    user: 'postgres',
+    password: 'postgres',
+    database: 'my_first_postgis'
+});
+
+// เชื่อมต่อกับฐานข้อมูล
+client.connect(function(err){
+    if(err){
+        console.warn('Error connecting to the database: ', err.message);
+        throw err;
+    }
+
+    // เมื่อเชื่อมต่อแล้วสามารถโต้ตอบกับฐานข้อมูลได้
+    client.query('SELECT PostGIS_full_version() as postgis_version', function(err, result){
+        if(err){
+            console.warn('Error obtaining PostGIS version: ', err.message);
+            throw err;
+        }
+
+        // ควรมีแถวหนึ่งที่ส่งคืน หากมีการติดตั้ง PostGIS
+        // หากไม่ใช่ การเรียกใช้ query จะเกิดข้อผิดพลาด
+        console.warn(result.rows[0].postgis_version);
+
+        // ปิดการเชื่อมต่อเมื่อเสร็จสิ้น
+        client.end(function(err){
+            if(err){
+                console.warn('Error disconnecting: ', err.message);
+                throw err;
+            }
+        });
+    });
+});

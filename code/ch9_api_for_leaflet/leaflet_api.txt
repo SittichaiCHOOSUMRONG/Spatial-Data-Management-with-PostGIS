@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en-US" xmlns="http://www.w3.org/1999/xhtml" >
+    <html>
+        <style>     
+           #map{
+               height: 800;
+           }  
+        </style>
+
+<title>my laflet</title>
+<head>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+
+ <!-- Make sure you put this AFTER Leaflet's CSS -->
+ <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.js"></script>
+     <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+
+</head>
+   
+<body>
+    <h2>my leaflet</h2>
+    <div id="map" style="height: 440px; border: 2px solid #AAA;"></div>
+<script>
+    //ตั้งค่าการซูม center ไปยัง มหาวิทยาลัยนเรศวร และทำการซูมที่ระดับ 14 จาก 20 
+    var map = L.map('map').setView([16.746389814262923,100.19619643273496], 14);
+
+
+//Start Based Maps 
+// CREATE GOOGLE MAP LAYER
+	// 1- Streets...
+	googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{
+	    maxZoom: 20,
+	    subdomains:['mt0','mt1','mt2','mt3']
+	});
+	// 2- Hybrid...
+	googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+	    maxZoom: 20,
+	    subdomains:['mt0','mt1','mt2','mt3']
+	});
+	// 3- Satellite...
+	googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+	    maxZoom: 20,
+	    subdomains:['mt0','mt1','mt2','mt3']
+	});
+	// 4- Terrain...
+	googleTerrain = L.tileLayer('http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',{
+	    maxZoom: 20,
+	    subdomains:['mt0','mt1','mt2','mt3']
+	});
+
+    //5- OpenStreetMap
+    osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+     // End Based Maps
+
+
+    //Add WMS From Geoserver
+  var admin_plk = L.tileLayer.wms("http://localhost:8080/geoserver/webgis/wms?",{
+        layers:'webgis:admin_plk',
+        format:'image/png',
+        transparent:true,
+        tiled:'true'
+    });
+
+    var agi_ortho = L.tileLayer.wms("http://localhost:8080/geoserver/webgis/wms?",{
+        layers:'webgis:aggie_ortho',
+        format:'image/png',
+        transparent:true,
+        tiled:'true'
+    });
+
+    var plk_amphoe; // ประกาศตัวแปรนอกฟังก์ชันเพื่อให้เข้าถึงได้ทั่วทั้งโค้ด
+
+
+    var ways_geojson = new L.GeoJSON.AJAX(["GeoJSON/ways_geojson.geojson"]);
+
+        // Geoserver Web Feature Service
+        $.ajax('http://localhost:8080/geoserver/webgis/wfs?', {
+            type: 'GET',
+            data: {
+                service: 'WFS',
+                version: '1.1.0',
+                request: 'GetFeature',
+                typename: 'webgis:amphoe_plk',
+                srsname: 'EPSG:4326',
+                outputFormat: 'application/json',
+            },
+            dataType: 'json', // ใช้ json แทน jsonp
+            success: function(data) {
+                plk_amphoe = L.geoJson(data); // เก็บเลเยอร์ในตัวแปร plk_amphoe
+                map.fitBounds(plk_amphoe.getBounds()); // ปรับซูมและแสดงทั้งหมด
+
+        function getPoi() {
+            return new Promise(function (resolve, reject) {
+                $.ajax({
+                    url: 'http://localhost:3000/api/dbconnect/getpoi/',
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        resolve(data);
+                    },
+                    error: function (xhr, status, error) {
+                        reject(error);
+                    }
+                });
+            });
+        }
+        getPoi().then((rt) => {
+            console.log(rt);
+        })
+
+        getPoi().then((r) => {
+        console.log(r);
+        markerG = L.layerGroup();
+        for (var i in r) {
+            L.marker(
+                    [r[i].lat, r[i].lng]
+                )
+                .addTo(getPoi);
+        }
+
+    });
+
+    var getPoi = new L.LayerGroup();
+
+
+
+
+                // อัพเดต overlays หลังจากที่ได้สร้างเลเยอร์ plk_amphoe แล้ว
+                var overlays = {
+                    "ขอบเขตการปกครองจังหวัดพิษณุโลก": admin_plk,
+                    "ลานหน้าคณะเกษตรศาสตร์ มน.": agi_ortho,
+                    "ขอบเขตอำเภอ จ.พิษณุโลก จาก GeoServer with json format": plk_amphoe,
+                    "ถนนจากไฟล์ GeoJSON": ways_geojson,
+                    'ตำแหน่ง POI': getPoi,
+                };
+
+                // Adding baseMaps and overlayMaps
+                L.control.layers(baseLayers, overlays).addTo(map);
+            },
+            error: function (xhr, status, error) {
+                console.error('Error fetching GeoJSON:', error);
+            }
+        });
+
+    // Base Layers
+    var baseLayers = {
+        'Google Street Map': googleStreets,
+        'Google Hybrid Map': googleHybrid,
+        'Google Satellite Map': googleSat,
+        'Google Terrain Map': googleTerrain,
+        'OpenStreetMap': osm,
+    };
+
+
+
+</script>
+</body>
+</html>
+
+
+
+
+
+

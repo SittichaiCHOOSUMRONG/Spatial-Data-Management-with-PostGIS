@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en-US" xmlns="http://www.w3.org/1999/xhtml" >
+    <html>
+        <style>     
+           #map{
+               height: 800;
+           }  
+        </style>
+
+<title>CRUE POI API</title>
+<head>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+
+ <!-- Make sure you put this AFTER Leaflet's CSS -->
+ <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.js"></script>
+     <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+
+</head>
+   
+<body>
+    <h2>CRUE POI API</h2>
+    <div id="map" style="height: 440px; border: 2px solid #AAA;"></div>
+<script>
+    //ตั้งค่าการซูม center ไปยัง มหาวิทยาลัยนเรศวร และทำการซูมที่ระดับ 14 จาก 20 
+    var map = L.map('map').setView([16.746389814262923,100.19619643273496], 14);
+
+
+//Start Based Maps 
+// CREATE GOOGLE MAP LAYER
+	// 1- Streets...
+	googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{
+	    maxZoom: 20,
+	    subdomains:['mt0','mt1','mt2','mt3']
+	});
+	// 2- Hybrid...
+	googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+	    maxZoom: 20,
+	    subdomains:['mt0','mt1','mt2','mt3']
+	});
+	// 3- Satellite...
+	googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+	    maxZoom: 20,
+	    subdomains:['mt0','mt1','mt2','mt3']
+	});
+	// 4- Terrain...
+	googleTerrain = L.tileLayer('http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',{
+	    maxZoom: 20,
+	    subdomains:['mt0','mt1','mt2','mt3']
+	});
+
+    //5- OpenStreetMap
+    osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+     // End Based Maps
+
+
+    //ประกาศตัวแปร markerArrayay
+    var markerArray = [];
+
+    //ฟังก์ชัน map even ที่จะเกิดขึ้นหลังจากการ click
+    map.on('click', (e) => {
+        console.log(e.latlng.lat);
+        console.log(e.latlng.lng);
+    })
+
+    //หากมีการคลิกครั้งต่อไป ให้ลบ marker ก่อนหน้านี้ทิ้ง
+    map.on('click', (e) => {
+        if (markerArray != null) {
+            for (let i in markerArray) {
+                map.removeLayer(markerArray[i]);
+            }
+        }
+
+    //คำสั่งแสดงรูป marker ตรงตำแหน่งที่คลิกและสั่งให้ popup ค่าพิกัด Lat,Long ของตำแหน่งที่คลิก
+    var addmarker = L.marker(e.latlng).bindPopup(
+        `${e.latlng.lat} , ${e.latlng.lng}`
+        ).addTo(map).openPopup();
+
+            markerArray.push(addmarker);
+    })
+
+
+     var baseLayers = {
+	'Google Street Map':googleStreets,
+	'Google Hybrid Map':googleHybrid,
+	'Google Satellite Map':googleSat,
+	'Google Terrain Map':googleTerrain,
+    'OpenStreetMap':osm,
+};
+
+// Adding baseMaps
+L.control.layers(baseLayers).addTo(map);
+
+</script>
+</body>
+</html>
+
+
+
+
+
+
